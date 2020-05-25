@@ -1,1 +1,4 @@
+__pycache__/
 env/
+master.txt
+password_safe.db
