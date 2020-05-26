@@ -15,36 +15,57 @@ class PasswordManager:
     def __init__(self):
         self._password_safe = None
 
-    def _parse_cmd(self, cmd):
-        if len(cmd) > 2:
-            print("command not found")
+    def _restart(self):
+        confirm = input("Are you sure you want to destory your safe and start fresh? [yes or no]: ")
 
-        if len(cmd) == 1:
-            if cmd[0] == "exit":
-                print("Goodbye")
-            elif cmd[0] == "list":
-                self._password_safe.list_all()
+        if confirm == "yes" or confirm == "y":
+            os.remove("master.key")
+            os.remove("password_safe.db")
+            print("Thank you for using Python Password Safe!")
 
-        if len(cmd) == 2:
-            if cmd[0] == "add":
-                self._password_safe.add(cmd[1])
-            elif cmd[0] == "delete":
-                self._password_safe.delete(cmd[1])
-            elif cmd[0] == "edit":
-                self._password_safe.edit(cmd[1])
-            elif cmd[0] == "peek":
-                self._password_safe.peek(cmd[1])
-            elif cmd[0] == "copy":
-                self._password_safe.copy(cmd[1])
-            else:
-                print("Command not found")
-
-    def _manage_user_actions(self):
+    def _display_options(self):
+        print("\nadd <entry>     - Store an entry into the safe.")
+        print("peek <entry>    - Display the password of an entry.")
+        print("copy <entry>    - Copy the password of an entry without peeking.")
+        print("edit <entry>    - Edit the entry details.")
+        print("delete <entry>  - Remove an entry from the safe.")
+        print("list            - View all the entries stored in the safe.")
+        print("restart         - Destroy the current safe and reset the program to its starting point.")
+        print("exit            - Lock the safe and exit the program.\n")
+        
+    def _manage_actions(self):
         cmd = ''
         
         while True:
-            cmd = input(">> ").lower().split(maxsplit=1)
-            self._parse_cmd(cmd)
+            cmd = input(">> ").split(maxsplit=1)
+
+            if len(cmd) == 1:
+                if cmd[0] == "exit":
+                    print("Goodbye")
+                    return
+                elif cmd[0] == "list":
+                    self._password_safe.list_all()
+                elif cmd[0] == "help":
+                    self._display_options()
+                elif cmd[0] == "restart":
+                    self._restart()
+                    return
+                else:
+                    print("Command '" + cmd[0]  + "' does not exist.")
+
+            if len(cmd) == 2:
+                if cmd[0] == "add":
+                    self._password_safe.add(cmd[1])
+                elif cmd[0] == "delete":
+                    self._password_safe.delete(cmd[1])
+                elif cmd[0] == "edit":
+                    self._password_safe.edit(cmd[1])
+                elif cmd[0] == "peek":
+                    self._password_safe.peek(cmd[1])
+                elif cmd[0] == "copy":
+                    self._password_safe.copy(cmd[1])
+                else:
+                    print("Command '" + cmd[0] + cmd[1]  + "' does not exist.")
 
         return 
 
@@ -172,7 +193,9 @@ class PasswordManager:
         
         self._auth_user()
 
-        #self._manage_user_actions()
+        self._manage_actions()
+
+        # clean up
             
 
 if __name__ == "__main__":
