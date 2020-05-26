@@ -1,6 +1,7 @@
-import os
-import sqlite3
 from cryptography.fernet import Fernet 
+from getpass import getpass
+import sqlite3
+import os
 
 
 import base64
@@ -31,3 +32,84 @@ class PasswordSafe:
         
         self._key = base64.urlsafe_b64encode(kdf.derive(pin))
         
+
+    def list_all(self):
+        self._cursor.execute('SELECT title FROM entries')
+
+        entries = self._cursor.fetchall()
+        entries = [entry[0] for entry in entries]
+
+        widest = len(max(entries, key=len)) + 4
+        padded = [entry.ljust(widest) for entry in entries]
+
+        colwidth = len(padded[0])
+        width = os.get_terminal_size().columns
+        #print(width)
+        perline = ((width)-4) // colwidth 
+        for i, pad in enumerate(padded):
+            print(pad, end="")
+            if i % perline == perline-1:
+                print('\n', end='')
+        print()
+
+    def _decrypt(self, token):
+        f = Fernet(self._key)
+        password = f.decrypt(token)
+
+        return password.decode("utf-8")
+
+    def _encrypt(self, password):
+        f = Fernet(self._key) 
+
+        password = bytes(password, 'ascii')
+        token = f.encrypt(password)
+
+        return token
+
+    def add(self, entry_name):
+        print("Creating entry " + entry_name + "...")
+        username = input("Username: ")
+
+        password = getpass(prompt="Password: ")
+        password_confirmation = getpass(prompt="Confirm Password: ")
+
+        if password == password_confirmation: 
+
+            encrypted_password = self._encrypt(password)
+
+            params = (entry_name, username, encrypted_password)
+
+            query = 'INSERT INTO entries (title, username, password) VALUES (?, ?, ?)'
+
+            self._cursor.execute(query, params)
+
+            self._connection.commit()
+        else:
+            print("Unable to add the entry. Passwords did not match.")
+
+    def peek(self, entry_name):
+        print("PEEK")
+
+        params = (entry_name, )
+        query = 'SELECT username, password FROM entries WHERE title = (?)'
+
+        self._cursor.execute(query, params)
+
+        entry = self._cursor.fetchone()
+
+        decrypted_password = self._decrypt(entry[1])
+
+        print(entry[0] + " ==> " + decrypted_password)
+
+    def delete(self, entry_name):
+        params = (entry_name, )
+        query = 'DELETE FROM entries WHERE title = (?)'
+        self._cursor.execute(query, params)
+        self._connection.commit()
+
+    def edit(self, entry_name):
+        pass
+
+    def copy(self, entry_name):
+        pass
+
