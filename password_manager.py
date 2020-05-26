@@ -1,12 +1,16 @@
 from getpass import getpass
 import bcrypt
-import base64 
 import sys
 import os
 import emoji
 
-from password_safe import PasswordSafe 
+from password_safe import PasswordSafe
 
+import base64
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes 
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+# NEED A COMAND THAT CAN RESTART THE PROGRAM AND SET UP A NEW SAFE
 class PasswordManager:
     def __init__(self):
         self._password_safe = None
@@ -39,7 +43,7 @@ class PasswordManager:
         cmd = ''
         
         while True:
-            cmd = input("> ").lower().split(maxsplit=1)
+            cmd = input(">> ").lower().split(maxsplit=1)
             self._parse_cmd(cmd)
 
         return 
@@ -47,36 +51,56 @@ class PasswordManager:
     def _auth_user(self):
         error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to authorize user."
 
+        print(emoji.emojize(":locked:") + " Enter your PIN to unlock the password safe.\n")
+
         try:
-            f = open("master.txt", 'r')
-
-            user_data = f.readline().split()
-            name = user_data[0]
-            hashed_pin = bytes(user_data[1], 'ascii')
-
-            print("\n" + emoji.emojize(":waving_hand:") + " Hello, " + name + "! Please enter your PIN...\n")
-
-            pin = getpass(prompt="   PIN: ")
-            pin = bytes(pin, 'ascii')
-
-            # Connect to the database if PINs match
-            if bcrypt.checkpw(pin, hashed_pin):
-                self._password_safe = PasswordSafe(pin)
-                print('\n' + emoji.emojize(":unlocked:") + " Password safe has been successfully unlocked.")
-                print("   Use the command 'help' for usage details.\n")
-            else:
-                print(error_msg + " Incorrect PIN.")
-                sys.exit(0)
+            f = open("master.key", 'br')
+            hashed_pin = f.read()
         except FileNotFoundError:
             print(error_msg + " User data is not found.") 
 
-    def _validate_fields(self, name, pin, pin_confirmation):
-        error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to configure your safe."
+        while True:
+            pin = getpass(prompt="PIN: ")
+            pin = bytes(pin, 'ascii')
 
-        # validate name input is not blank
-        if name == '':
-            print(error_msg + " No name was entered.\n")
-            return False 
+            if bcrypt.checkpw(pin, hashed_pin):
+                break
+            else:
+                print("\n" + emoji.emojize(':cross_mark:') + " The PIN you entered is incorrect. Please try again.\n")
+
+        key = self._derive_key(pin)
+        self._password_safe = PasswordSafe(key)
+
+        print('\n' + emoji.emojize(":unlocked:") + " Password safe successfully unlocked.")
+        print("\n-----------------------------------------------------------\n")
+        print(emoji.emojize(":information:") + " Use the command 'help' for usage details.\n")
+
+
+    def _derive_key(self, pin):
+        salt = b'V\x04<\x7f\x07\x89\xb1\xe5\x8dF\x02\xb2\x85\xb6\x9fw'
+
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+
+        return base64.urlsafe_b64encode(kdf.derive(pin))
+
+    def _store_pin(self, hashed_pin):
+        try:
+            f = open('master.key', 'wb')
+            f.write(hashed_pin)
+        except:
+            print("error")
+            sys.exit(0)
+        finally:
+            f.close()
+
+    def _validate_pin(self, pin, pin_confirmation):
+        error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to configure your safe."
 
         # validate pin input is not blank
         if pin == '':
@@ -108,58 +132,29 @@ class PasswordManager:
             
     def _create_user(self):
         print(emoji.emojize(":waving_hand:") + " Welcome! Let's get you set up...\n")
+        #print("Welcome! Let's get you set up...\n")
 
-        name = input("   Enter your name: ").strip()
-        pin = getpass(prompt="   Enter a 4-digit PIN: ") 
-        pin_confirmation = getpass(prompt="   Confirm your PIN: ")
+        pin = getpass(prompt="Enter a 4-digit PIN: ") 
+        pin_confirmation = getpass(prompt="Confirm PIN: ")
 
-        # Validate user inputs before continuing.
-        if self._validate_fields(name, pin, pin_confirmation):
-
-            # Hash the PIN number with a random generated salt and store it in the database.
+        if self._validate_pin(pin, pin_confirmation):
             pin = bytes(pin, 'ascii')
             hashed_pin = bcrypt.hashpw(pin, bcrypt.gensalt())
+            self._store_pin(hashed_pin)
 
-            # Create an encryption key for the passwords that will be stored in the safe.
-            key = os.urandom(16)
-            #print(key, type(key))
-            #print()
+            key = self._derive_key(pin)
 
-            key = base64.b64encode(key).decode('utf-8')
-            #print(key, type(key))
-            #key = bytes(key, 'utf-8')
-            #print(key, type(key))
-            #key = base64.b64decode(key)  
-            #print(key, type(key))
-            #key = b64encode(key).decode('utf-8')
-            #print(type(key))
+            self._password_safe = PasswordSafe(key)
+            # then close it after creating it because you're going to open it again in auth
 
-            #key = bytes(b64encode(key))
-            #print(type(key))
-            #key = bytes(key)
-            #print(key)
-            #sys.exit(0)
-
-            try: 
-                f = open('master.txt', 'w')
-                data = name + " " + hashed_pin.decode('utf-8') + " " + key
-                f.write(data)
-                f.close()
-            except:
-                print("Unable to do something with file") # need better error message here #####
-
-            # Create the database file through the password safe object.
-            self._password_safe = PasswordSafe()
-            # then close it after creating it
-
-            print("\n" + emoji.emojize(":white_heavy_check_mark:") + " Success! Your password safe has been configured.")
+            print("\n" + emoji.emojize(":white_heavy_check_mark:") + " Password safe successfully configured.")
+            print("\n-----------------------------------------------------------\n")
         else:
             sys.exit(0)
-            
+
     def _is_new_user(self):
-        # If these files already exists, then there is already a password
-        # safe configured and the user is a returning user.
-        if os.path.exists("master.txt") and os.path.exists("password_safe.db"):
+        # Check to see if these user files already exist
+        if os.path.exists("master.key") and os.path.exists("password_safe.db"):
             return False
         else:
             return True
@@ -172,20 +167,17 @@ class PasswordManager:
     def run(self):
         self._display_banner()
 
-        # Create user data if user is new and using the program for the first time.
         if self._is_new_user():
             self._create_user() 
         
-        # Authorize the user before connecting to the database.
         self._auth_user()
 
-        self._manage_user_actions()
-
-        print("Goodbye")
+        #self._manage_user_actions()
             
 
 if __name__ == "__main__":
     try: 
         PasswordManager().run()
     except KeyboardInterrupt:
+        print('\n')
         sys.exit(0)
