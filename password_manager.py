@@ -1,12 +1,48 @@
-from password_safe import PasswordSafe 
 from getpass import getpass
 import bcrypt
+import base64 
 import sys
+import os
 import emoji
+
+from password_safe import PasswordSafe 
 
 class PasswordManager:
     def __init__(self):
         self._password_safe = None
+
+    def _parse_cmd(self, cmd):
+        if len(cmd) > 2:
+            print("command not found")
+
+        if len(cmd) == 1:
+            if cmd[0] == "exit":
+                print("Goodbye")
+            elif cmd[0] == "list":
+                self._password_safe.list_all()
+
+        if len(cmd) == 2:
+            if cmd[0] == "add":
+                self._password_safe.add(cmd[1])
+            elif cmd[0] == "delete":
+                self._password_safe.delete(cmd[1])
+            elif cmd[0] == "edit":
+                self._password_safe.edit(cmd[1])
+            elif cmd[0] == "peek":
+                self._password_safe.peek(cmd[1])
+            elif cmd[0] == "copy":
+                self._password_safe.copy(cmd[1])
+            else:
+                print("Command not found")
+
+    def _manage_user_actions(self):
+        cmd = ''
+        
+        while True:
+            cmd = input("> ").lower().split(maxsplit=1)
+            self._parse_cmd(cmd)
+
+        return 
 
     def _auth_user(self):
         error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to authorize user."
@@ -25,7 +61,7 @@ class PasswordManager:
 
             # Connect to the database if PINs match
             if bcrypt.checkpw(pin, hashed_pin):
-                self._password_safe = PasswordSafe()
+                self._password_safe = PasswordSafe(pin)
                 print('\n' + emoji.emojize(":unlocked:") + " Password safe has been successfully unlocked.")
                 print("   Use the command 'help' for usage details.\n")
             else:
@@ -84,9 +120,29 @@ class PasswordManager:
             pin = bytes(pin, 'ascii')
             hashed_pin = bcrypt.hashpw(pin, bcrypt.gensalt())
 
+            # Create an encryption key for the passwords that will be stored in the safe.
+            key = os.urandom(16)
+            #print(key, type(key))
+            #print()
+
+            key = base64.b64encode(key).decode('utf-8')
+            #print(key, type(key))
+            #key = bytes(key, 'utf-8')
+            #print(key, type(key))
+            #key = base64.b64decode(key)  
+            #print(key, type(key))
+            #key = b64encode(key).decode('utf-8')
+            #print(type(key))
+
+            #key = bytes(b64encode(key))
+            #print(type(key))
+            #key = bytes(key)
+            #print(key)
+            #sys.exit(0)
+
             try: 
                 f = open('master.txt', 'w')
-                data = name + " " + hashed_pin.decode('utf-8')
+                data = name + " " + hashed_pin.decode('utf-8') + " " + key
                 f.write(data)
                 f.close()
             except:
@@ -123,13 +179,9 @@ class PasswordManager:
         # Authorize the user before connecting to the database.
         self._auth_user()
 
+        self._manage_user_actions()
 
-        #print('\n' + emoji.emojize(":unlocked:") + " Password safe has been successfully unlocked.")
-        #print("   Use the command 'help' to view your options.\n")
-
-        #self._options()
-
-        #print("Goodbye")
+        print("Goodbye")
             
 
 if __name__ == "__main__":
