@@ -1,6 +1,5 @@
 import os
 import sys
-import emoji
 
 import base64
 import bcrypt
@@ -12,9 +11,20 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from password_safe import PasswordSafe
 
 
-
+X = '\u2717'
+LOCK_EMOJI = '\U0001F510'
+CHECK_MARK = '\u2713'
 DEFAULT_TEXT = '\x1b[0m'
 ITALIC_TEXT = '\x1b[3m'
+BOLD_TEXT = '\033[1m'
+HEADER = '\033[95m'
+BLUE = '\033[94m'
+PURPLE = '\033[94m'
+CYAN = '\033[96m'
+YELLOW = '\033[93m'
+DEFAULT_COLOR = '\033[0m'
+RED = '\033[91m'
+GREEN = '\033[92m'
 
 class PasswordManager:
     def __init__(self):
@@ -28,23 +38,25 @@ class PasswordManager:
         print("peek <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Display the username and password of an entry.")
         print("copy <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Copy the password of an entry without peeking.")
         print("list            - View all the entries stored in the safe.")
-        print("exit            - Lock the safe and exit the application.\n")
+        print("exit            - Lock the safe and exit the program.\n")
 
 
     def _manage_actions(self):
+        print(CYAN + "\nUse the command 'help' for usage details\nUse the command 'exit' to exit at any time.\n" + DEFAULT_COLOR)
+
         cmd = ''
         
         while True:
             cmd = input(">> ").split(maxsplit = 1)
 
             if len(cmd) == 1:
-                if cmd[0] == "exit":
+                if cmd[0] == "help":
+                    self._display_options()
+                elif cmd[0] == "exit":
                     self._password_safe.close()
                     return
                 elif cmd[0] == "list":
                     self._password_safe.list_all()
-                elif cmd[0] == "help":
-                    self._display_options()
                 elif cmd[0] in ("add", "delete", "edit", "peek", "copy"):
                     print("\nCommand '" + cmd[0] + "' requires an additional parameter. Type 'help' for usage details.\n")
                 else:
@@ -68,29 +80,25 @@ class PasswordManager:
 
 
     def _auth_user(self):
-        print(emoji.emojize(":locked:") + " Enter your PIN to unlock the password safe.\n")
-
-        try:
+        try: # clean this up bro
             f = open("master.key", 'br')
             hashed_pin = f.read()
         except FileNotFoundError:
-            print(error_msg + " User data is not found.") 
+            print("User data is not found.") 
 
         while True:
-            pin = getpass(prompt="PIN: ")
+            pin = getpass(prompt="Enter your master PIN: ")
             pin = bytes(pin, 'ascii')
 
             if bcrypt.checkpw(pin, hashed_pin):
                 break
             else:
-                print("The PIN you entered is incorrect. Please try again.")
+                print(RED + X + " Incorrect PIN. Please try again." + DEFAULT_COLOR)
 
         key = self._derive_key(pin)
         self._password_safe = PasswordSafe(key)
 
-        print('\n' + emoji.emojize(":unlocked:") + " Password safe successfully unlocked.")
-        print("\n-----------------------------------------------------------\n")
-        print(emoji.emojize(":information:") + " Use the command 'help' for usage details.\n")
+        print(GREEN + CHECK_MARK + " Success! Password safe unlocked." + DEFAULT_COLOR)
 
 
     def _derive_key(self, pin):
@@ -119,41 +127,39 @@ class PasswordManager:
 
 
     def _validate_pin(self, pin, pin_confirmation):
-        error_msg = "\nUnable to configure your safe."
-
         # validate pin input is not blank
         if pin == '':
-            print(error_msg + " No PIN was entered.")
+            print(X + " No PIN was entered.")
             return False 
 
         # validate pin is a combination of digits 0-9
         try:
             int(pin)
         except ValueError:
-            print(error_msg + " PIN was not a combination of digits 0-9.")
+            print(X + " PIN was not a combination of digits 0-9.")
             return False 
 
         # validate pin is 4-digits long
         if len(pin) < 4:
-            print(error_msg + " PIN was less than 4-digits long.")
+            print(X + " PIN was less than 4-digits long.")
             return False 
         if len(pin) > 4: 
-            print(error_msg + " PIN was more than 4-digits long.")
+            print(X + " PIN was more than 4-digits long.")
             return False 
 
         # validate pins matched and were confirmed
         if pin != pin_confirmation:
-            print(error_msg + " The PIN numbers entered did not match.")
+            print(X + " The PIN numbers entered did not match.")
             return False
 
         return True
         
             
     def _create_user(self):
-        print(emoji.emojize(":waving_hand:") + " Welcome! Let's get you set up...\n")
+        print(CYAN + "Welcome! Let's get you set up...\nCreate a master PIN and do not lose it! It is unrecoverable." + DEFAULT_COLOR)
 
         pin = getpass(prompt="Enter a 4-digit PIN: ") 
-        pin_confirmation = getpass(prompt="Confirm PIN: ")
+        pin_confirmation = getpass(prompt="Confirm your PIN: ")
 
         if self._validate_pin(pin, pin_confirmation):
             pin = bytes(pin, 'ascii')
@@ -164,7 +170,7 @@ class PasswordManager:
 
             self._password_safe = PasswordSafe(key)
 
-            print("\n" + emoji.emojize(":white_heavy_check_mark:") + " Password safe successfully configured.")
+            print(GREEN + CHECK_MARK + " Success! Password safe configured. Restart the program and enter your master PIN to begin." + DEFAULT_COLOR)
             print("\n-----------------------------------------------------------\n")
         else:
             print("Please try again later.\n")
@@ -180,9 +186,9 @@ class PasswordManager:
 
 
     def _display_banner(self):
-        print("\n===========================================================\n")
-        print("\t" + emoji.emojize(":locked_with_key:") + " PYTHON PASSWORD SAFE - Command Line Tool")
-        print("\n===========================================================\n")
+        print("\n===========================================================")
+        print("\t" + BOLD_TEXT + LOCK_EMOJI + " PYTHON PASSWORD SAFE - Command Line Tool" + DEFAULT_TEXT)
+        print("===========================================================\n")
     
 
     def run(self):

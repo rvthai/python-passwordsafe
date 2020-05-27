@@ -6,9 +6,20 @@ import pyperclip
 
 
 
+X = '\u2717'
+LOCK_EMOJI = '\U0001F510'
+CHECK_MARK = '\u2713'
+DEFAULT_TEXT = '\x1b[0m'
+ITALIC_TEXT = '\x1b[3m'
+BOLD_TEXT = '\033[1m'
+HEADER = '\033[95m'
+BLUE = '\033[94m'
+PURPLE = '\033[95m'
+CYAN = '\033[96m'
+YELLOW = '\033[93m'
 DEFAULT_COLOR = '\033[0m'
-ERROR_COLOR = '\033[91m'
-SUCCESS_COLOR = '\033[92m'
+RED = '\033[91m'
+GREEN = '\033[92m'
 
 class PasswordSafe:
     def __init__(self, key):
@@ -135,9 +146,15 @@ class PasswordSafe:
 
 
     def list_all(self):
+        #print(PURPLE + "Password Safe" + DEFAULT_COLOR)
+        print("Password Safe")
         self._cursor.execute('SELECT title FROM entries')
 
         entries = self._cursor.fetchall()
+
+        if len(entries) == 0:
+            return 
+
         entries = [ entry[0] for entry in entries ]
 
         widest = len(max(entries, key=len)) + 4
