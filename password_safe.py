@@ -21,6 +21,15 @@ DEFAULT_COLOR = '\033[0m'
 RED = '\033[91m'
 GREEN = '\033[92m'
 
+branch = '├─'
+pipe = '│'
+end = '└─'
+dash = '─'
+                  
+child_conn_str = '│  '
+leaf_inner_str = '├─ '
+child_conn_str = '│  '
+empty_str = '   '
 class PasswordSafe:
     def __init__(self, key):
         self._connection = sqlite3.connect('password_safe.db')
@@ -146,30 +155,37 @@ class PasswordSafe:
 
 
     def list_all(self):
-        #print(PURPLE + "Password Safe" + DEFAULT_COLOR)
-        print("Password Safe")
-        self._cursor.execute('SELECT title FROM entries')
+        self._cursor.execute('SELECT category, title FROM entries')
 
         entries = self._cursor.fetchall()
+
+        print("Password Safe [Entries: 0]")
 
         if len(entries) == 0:
             return 
 
-        entries = [ entry[0] for entry in entries ]
-
-        widest = len(max(entries, key=len)) + 4
-        padded = [ entry.ljust(widest) for entry in entries ]
-        colwidth = len(padded[0])
-        width = os.get_terminal_size().columns
+        output = {}
+        for a, b in entries: 
+            output.setdefault(a, []).append(b) 
         
-        perline = ((width) - 4) // colwidth
+        lastone = None
+        for k in output.keys():
+            if list(output.keys()).index(k) == len(output.keys()) - 1:
+                print(end + dash + dash + " " + BLUE + BOLD_TEXT + k + DEFAULT_TEXT+ DEFAULT_COLOR)
+                lastone = True
+            else:
+                print(branch + dash + dash + " " + BLUE + BOLD_TEXT + k + DEFAULT_TEXT+ DEFAULT_COLOR)
+            for v in output[k]:
+                #print(output[k].index(v))
+                if output[k].index(v) == len(output[k]) - 1 and lastone:
+                    print("     " + end + dash + dash + " " + v)
+                elif lastone:
+                    print("     " + branch + dash + dash + " " + v)
+                elif output[k].index(v) == len(output[k]) - 1:
+                    print(pipe + "    " + end + dash + dash + " " + v)
+                else: 
+                    print(pipe + "    " + branch + dash + dash + " " + v)
 
-        print()
-        for i, string in enumerate(padded):
-            print(string, end='')
-            if i % perline == perline - 1:
-                print('\n', end='')
-        print('\n')
 
     def close(self):
         self._connection.close()
