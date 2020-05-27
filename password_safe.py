@@ -30,104 +30,92 @@ child_conn_str = '│  '
 leaf_inner_str = '├─ '
 child_conn_str = '│  '
 empty_str = '   '
+
 class PasswordSafe:
     def __init__(self, key):
         self._connection = sqlite3.connect('password_safe.db')
         self._cursor = self._connection.cursor()
 
-        self._cursor.execute('CREATE TABLE IF NOT EXISTS entries (title text NOT NULL PRIMARY KEY , username text NOT NULL, password blob NOT NULL)')
+        self._cursor.execute('CREATE TABLE IF NOT EXISTS entries (title text NOT NULL PRIMARY KEY, category text NOT NULL, username text NOT NULL, password blob NOT NULL)')
         
         self._key = key
 
 
     def add(self, entry_name):
         if self._exists(entry_name):
-            print("\nEntry '" + entry_name + "' already exists.\n")
+            print("Entry '" + entry_name + "' already exists.")
             return 
-
-        print("\nEnter a username and password for entry '" + entry_name + "'." )
-
+        
+        category = input("Group: ").upper()
         username = input("Username: ")
         password = getpass(prompt="Password: ")
-        password_confirmation = getpass(prompt="Confirm Password: ")
 
-        if password == password_confirmation: 
-            encrypted_password = self._encrypt(password)
+        encrypted_password = self._encrypt(password)
 
-            params = (entry_name, username, encrypted_password)
-            query = 'INSERT INTO entries (title, username, password) VALUES (?, ?, ?)'
+        params = (entry_name, category, username, encrypted_password)
+        query = 'INSERT INTO entries (title, category, username, password) VALUES (?, ?, ?, ?)'
+        self._cursor.execute(query, params)
+        self._connection.commit()
 
-            self._cursor.execute(query, params)
-            self._connection.commit()
-
-            print(SUCCESS_COLOR + "Entry '" + entry_name + "' added.\n" + DEFAULT_COLOR)
-        else:
-            print(ERROR_COLOR + "Unable to add entry. Passwords did not match.\n" + DEFAULT_COLOR)
+        print(GREEN + CHECK_MARK + " Success! Entry stored." + DEFAULT_COLOR)
 
 
     def delete(self, entry_name):
         if not self._exists(entry_name):
-            print("\nEntry '" + entry_name + "' does not exist.\n")
+            print("Entry '" + entry_name + "' not found.")
             return 
 
-        confirmation = input("\nAre you sure you want to delete'" + entry_name + "' [Y/n]? ").strip().lower()
-        if confirmation == 'y' or confirm == 'yes':
+        confirmation = input("Are you sure you want to delete '" + entry_name + "'? [Y/n] ").strip().lower()
+        if confirmation == 'y' or confirmation == 'yes':
             params = (entry_name, )
             query = 'DELETE FROM entries WHERE title = (?)'
             self._cursor.execute(query, params)
             self._connection.commit() 
 
-            print("Entry '" + entry_name + "' deleted.\n")
+            print(GREEN + CHECK_MARK + " Success! Entry deleted." + DEFAULT_COLOR)
 
     def edit(self, entry_name):
         if not self._exists(entry_name):
-            print("\nEntry '" + entry_name + "' does not exist.\n")
+            print("Entry '" + entry_name + "' not found.")
             return 
 
         params = (entry_name, )
-        query  = 'SELECT username, password FROM entries WHERE title = (?)'
+        query  = 'SELECT category, username, password FROM entries WHERE title = (?)'
         self._cursor.execute(query, params)
         entry = self._cursor.fetchone()
 
-        old_title = entry_name 
-        old_username = entry[0] 
-        old_password = self._decrypt(entry[1])
+        curr_title = entry_name
+        curr_category = entry[0] 
+        curr_username = entry[1] 
+        curr_password = self._decrypt(entry[2])
 
-        print("\nEnter an updated title, username, and/or password for '" + entry_name + "'.")
-
-        title = input("Title [" + old_title + "]: ")
-        username = input("Username [" + old_username + "]: ")
-        password = getpass(prompt="Password [" + old_password + "]: ")
-        password_confirmation = getpass(prompt="Confirm Password [" + old_password + "]: ")
+        title = input("Title [" + curr_title + "]: ")
+        category = input("Group [" + curr_category + "]: ").upper()
+        username = input("Username [" + curr_username + "]: ")
+        password = getpass(prompt="Password [" + curr_password + "]: ")
 
         if title.strip() == '':
-            title = old_title
-
+            title = curr_title
+        if category.strip() == '':
+            category = curr_category
         if username.strip() == '':
-            username = old_username
-        
-        if password == '' and password_confirmation == '':
-            password = old_password
+            username = curr_username
+        if password == '':
+            password = curr_password
 
-        if password_confirmation == '':
-            password_confirmation = old_password
+        password = self._encrypt(password)
 
-        if password == password_confirmation:
-            password = self._encrypt(password)
+        params = (title, category, username, password, entry_name)
+        query = 'UPDATE entries SET title=(?), category=(?), username=(?), password=(?) WHERE title = (?)'
+        self._cursor.execute(query, params)
+        self._connection.commit() 
 
-            params = (title, username, password, entry_name)
-            query = 'UPDATE entries SET title=(?), username=(?), password=(?) WHERE title = (?)'
-            self._cursor.execute(query, params)
-            self._connection.commit() 
-
-            print(SUCCESS_COLOR + "Entry '" + entry_name + "' updated.\n" + DEFAULT_COLOR)
-        else:
-            print(ERROR_COLOR + "Unable to edit entry. Passwords did not match.\n" + DEFAULT_COLOR)
+        print(GREEN + CHECK_MARK + "Success! Entry updated." + DEFAULT_COLOR)
 
 
     def peek(self, entry_name):
         if not self._exists(entry_name):
-            print("\nEntry '" + entry_name + "' does not exist.\n")
+            print("Entry '" + entry_name + "' not found.")
             return 
 
         params = (entry_name, )
@@ -137,12 +125,13 @@ class PasswordSafe:
 
         decrypted_password = self._decrypt(entry[1])
 
-        print('\n' + entry_name + " ==> " + entry[0] + " | " + decrypted_password + '\n')
+        print("Username ==> " + entry[0])
+        print("Password ==> " + decrypted_password)
 
 
     def copy(self, entry_name):
         if not self._exists(entry_name):
-            print("\nEntry '" + entry_name + "' does not exist.\n")
+            print("Entry '" + entry_name + "' not found.")
             return
 
         params = (entry_name, )
@@ -151,6 +140,7 @@ class PasswordSafe:
         entry = self._cursor.fetchone() 
 
         decrypted_password = self._decrypt(entry[0])
+        
         pyperclip.copy(decrypted_password)
 
 
@@ -167,7 +157,7 @@ class PasswordSafe:
         output = {}
         for a, b in entries: 
             output.setdefault(a, []).append(b) 
-        
+
         lastone = None
         for k in output.keys():
             if list(output.keys()).index(k) == len(output.keys()) - 1:

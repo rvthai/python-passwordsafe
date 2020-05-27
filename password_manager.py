@@ -32,13 +32,13 @@ class PasswordManager:
 
 
     def _display_options(self):
-        print("\nadd <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">     - Create and store an entry into the safe.")
+        print("add <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">     - Create and store an entry into the safe.")
         print("delete <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">  - Remove an entry from the safe.")
         print("edit <" +  ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Change and update the entry details.")
         print("peek <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Display the username and password of an entry.")
         print("copy <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Copy the password of an entry without peeking.")
         print("list            - View all the entries stored in the safe.")
-        print("exit            - Lock the safe and exit the program.\n")
+        print("exit            - Lock the safe and exit the program.")
 
 
     def _manage_actions(self):
@@ -60,7 +60,7 @@ class PasswordManager:
                 elif cmd[0] in ("add", "delete", "edit", "peek", "copy"):
                     print("\nCommand '" + cmd[0] + "' requires an additional parameter. Type 'help' for usage details.\n")
                 else:
-                    print("\nCommand not found: '" + cmd[0] + "'\n")
+                    print("Command '" + cmd[0] + "' not found.")
 
             if len(cmd) == 2:
                 if cmd[0] == "add":
@@ -74,7 +74,7 @@ class PasswordManager:
                 elif cmd[0] == "copy":
                     self._password_safe.copy(cmd[1])
                 else:
-                    print("\nCommand not found'" + cmd[0] + " " + cmd[1] + "'\n")
+                    print("Command '" + cmd[0] + "' not found.")
 
         return 
 
