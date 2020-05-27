@@ -1,57 +1,54 @@
-from getpass import getpass
-import bcrypt
-import sys
 import os
+import sys
 import emoji
 
-from password_safe import PasswordSafe
-
 import base64
+import bcrypt
+from getpass import getpass
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-# NEED A COMAND THAT CAN RESTART THE PROGRAM AND SET UP A NEW SAFE
+
+from password_safe import PasswordSafe
+
+
+
+DEFAULT_TEXT = '\x1b[0m'
+ITALIC_TEXT = '\x1b[3m'
+
 class PasswordManager:
     def __init__(self):
         self._password_safe = None
 
-    def _restart(self):
-        confirm = input("Are you sure you want to destory your safe and start fresh? [yes or no]: ")
-
-        if confirm == "yes" or confirm == "y":
-            os.remove("master.key")
-            os.remove("password_safe.db")
-            print("Thank you for using Python Password Safe!")
 
     def _display_options(self):
-        print("\nadd <entry>     - Store an entry into the safe.")
-        print("peek <entry>    - Display the password of an entry.")
-        print("copy <entry>    - Copy the password of an entry without peeking.")
-        print("edit <entry>    - Edit the entry details.")
-        print("delete <entry>  - Remove an entry from the safe.")
+        print("\nadd <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">     - Create and store an entry into the safe.")
+        print("delete <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">  - Remove an entry from the safe.")
+        print("edit <" +  ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Change and update the entry details.")
+        print("peek <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Display the username and password of an entry.")
+        print("copy <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Copy the password of an entry without peeking.")
         print("list            - View all the entries stored in the safe.")
-        print("restart         - Destroy the current safe and reset the program to its starting point.")
-        print("exit            - Lock the safe and exit the program.\n")
-        
+        print("exit            - Lock the safe and exit the application.\n")
+
+
     def _manage_actions(self):
         cmd = ''
         
         while True:
-            cmd = input(">> ").split(maxsplit=1)
+            cmd = input(">> ").split(maxsplit = 1)
 
             if len(cmd) == 1:
                 if cmd[0] == "exit":
-                    print("Goodbye")
+                    self._password_safe.close()
                     return
                 elif cmd[0] == "list":
                     self._password_safe.list_all()
                 elif cmd[0] == "help":
                     self._display_options()
-                elif cmd[0] == "restart":
-                    self._restart()
-                    return
+                elif cmd[0] in ("add", "delete", "edit", "peek", "copy"):
+                    print("\nCommand '" + cmd[0] + "' requires an additional parameter. Type 'help' for usage details.\n")
                 else:
-                    print("Command '" + cmd[0]  + "' does not exist.")
+                    print("\nCommand not found: '" + cmd[0] + "'\n")
 
             if len(cmd) == 2:
                 if cmd[0] == "add":
@@ -65,13 +62,12 @@ class PasswordManager:
                 elif cmd[0] == "copy":
                     self._password_safe.copy(cmd[1])
                 else:
-                    print("Command '" + cmd[0] + cmd[1]  + "' does not exist.")
+                    print("\nCommand not found'" + cmd[0] + " " + cmd[1] + "'\n")
 
         return 
 
-    def _auth_user(self):
-        error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to authorize user."
 
+    def _auth_user(self):
         print(emoji.emojize(":locked:") + " Enter your PIN to unlock the password safe.\n")
 
         try:
@@ -87,7 +83,7 @@ class PasswordManager:
             if bcrypt.checkpw(pin, hashed_pin):
                 break
             else:
-                print("\n" + emoji.emojize(':cross_mark:') + " The PIN you entered is incorrect. Please try again.\n")
+                print("The PIN you entered is incorrect. Please try again.")
 
         key = self._derive_key(pin)
         self._password_safe = PasswordSafe(key)
@@ -110,6 +106,7 @@ class PasswordManager:
 
         return base64.urlsafe_b64encode(kdf.derive(pin))
 
+
     def _store_pin(self, hashed_pin):
         try:
             f = open('master.key', 'wb')
@@ -120,32 +117,33 @@ class PasswordManager:
         finally:
             f.close()
 
+
     def _validate_pin(self, pin, pin_confirmation):
-        error_msg = "\n" + emoji.emojize(':cross_mark:') + " Unable to configure your safe."
+        error_msg = "\nUnable to configure your safe."
 
         # validate pin input is not blank
         if pin == '':
-            print(error_msg + " No PIN was entered.\n")
+            print(error_msg + " No PIN was entered.")
             return False 
 
         # validate pin is a combination of digits 0-9
         try:
             int(pin)
         except ValueError:
-            print(error_msg + " PIN was not a combination of digits 0-9.\n")
+            print(error_msg + " PIN was not a combination of digits 0-9.")
             return False 
 
         # validate pin is 4-digits long
         if len(pin) < 4:
-            print(error_msg + " PIN was less than 4-digits long.\n")
+            print(error_msg + " PIN was less than 4-digits long.")
             return False 
         if len(pin) > 4: 
-            print(error_msg + " PIN was more than 4-digits long.\n")
+            print(error_msg + " PIN was more than 4-digits long.")
             return False 
 
         # validate pins matched and were confirmed
         if pin != pin_confirmation:
-            print(error_msg + " The PIN numbers entered did not match.\n")
+            print(error_msg + " The PIN numbers entered did not match.")
             return False
 
         return True
@@ -153,7 +151,6 @@ class PasswordManager:
             
     def _create_user(self):
         print(emoji.emojize(":waving_hand:") + " Welcome! Let's get you set up...\n")
-        #print("Welcome! Let's get you set up...\n")
 
         pin = getpass(prompt="Enter a 4-digit PIN: ") 
         pin_confirmation = getpass(prompt="Confirm PIN: ")
@@ -166,12 +163,13 @@ class PasswordManager:
             key = self._derive_key(pin)
 
             self._password_safe = PasswordSafe(key)
-            # then close it after creating it because you're going to open it again in auth
 
             print("\n" + emoji.emojize(":white_heavy_check_mark:") + " Password safe successfully configured.")
             print("\n-----------------------------------------------------------\n")
         else:
+            print("Please try again later.\n")
             sys.exit(0)
+
 
     def _is_new_user(self):
         # Check to see if these user files already exist
@@ -180,11 +178,13 @@ class PasswordManager:
         else:
             return True
 
+
     def _display_banner(self):
         print("\n===========================================================\n")
         print("\t" + emoji.emojize(":locked_with_key:") + " PYTHON PASSWORD SAFE - Command Line Tool")
         print("\n===========================================================\n")
     
+
     def run(self):
         self._display_banner()
 
@@ -194,8 +194,6 @@ class PasswordManager:
         self._auth_user()
 
         self._manage_actions()
-
-        # clean up
             
 
 if __name__ == "__main__":
