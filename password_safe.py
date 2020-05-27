@@ -110,7 +110,7 @@ class PasswordSafe:
         self._cursor.execute(query, params)
         self._connection.commit() 
 
-        print(GREEN + CHECK_MARK + "Success! Entry updated." + DEFAULT_COLOR)
+        print(GREEN + CHECK_MARK + " Success! Entry updated." + DEFAULT_COLOR)
 
 
     def peek(self, entry_name):
@@ -140,7 +140,7 @@ class PasswordSafe:
         entry = self._cursor.fetchone() 
 
         decrypted_password = self._decrypt(entry[0])
-        
+
         pyperclip.copy(decrypted_password)
 
 
@@ -149,7 +149,7 @@ class PasswordSafe:
 
         entries = self._cursor.fetchall()
 
-        print("Password Safe [Entries: 0]")
+        print("Password Safe (" + str(len(entries)) + " entries)")
 
         if len(entries) == 0:
             return 

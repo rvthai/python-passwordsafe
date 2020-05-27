@@ -30,6 +30,14 @@ class PasswordManager:
     def __init__(self):
         self._password_safe = None
 
+    def _destroy_safe(self):
+        confirmation = input("Are you sure you want to destroy this safe? All data including the master PIN will be deleted. [Y/n] ").strip().lower()
+        if confirmation == 'y' or confirmation == 'yes':
+            os.remove('master.key')
+            os.remove('password_safe.db')
+            print(GREEN + CHECK_MARK + " Success! Password safe destroyed. Restart the program to set up a new safe." + DEFAULT_COLOR)
+            sys.exit(0)
+
 
     def _display_options(self):
         print("add <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">     - Create and store an entry into the safe.")
@@ -38,6 +46,7 @@ class PasswordManager:
         print("peek <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Display the username and password of an entry.")
         print("copy <" + ITALIC_TEXT + "entry" + DEFAULT_TEXT + ">    - Copy the password of an entry without peeking.")
         print("list            - View all the entries stored in the safe.")
+        print("destroy         - Delete all data including the master PIN.")
         print("exit            - Lock the safe and exit the program.")
 
 
@@ -57,8 +66,10 @@ class PasswordManager:
                     return
                 elif cmd[0] == "list":
                     self._password_safe.list_all()
+                elif cmd[0] == "destroy":
+                    self._destroy_safe()
                 elif cmd[0] in ("add", "delete", "edit", "peek", "copy"):
-                    print("\nCommand '" + cmd[0] + "' requires an additional parameter. Type 'help' for usage details.\n")
+                    print("Command '" + cmd[0] + "' requires an additional parameter. Type 'help' for usage details.")
                 else:
                     print("Command '" + cmd[0] + "' not found.")
 
@@ -156,25 +167,26 @@ class PasswordManager:
         
             
     def _create_user(self):
-        print(CYAN + "Welcome! Let's get you set up...\nCreate a master PIN and do not lose it! It is unrecoverable." + DEFAULT_COLOR)
+        print(CYAN + "Welcome! Let's get you set up. Create a master PIN and do not lose it! It is unrecoverable." + DEFAULT_COLOR)
 
-        pin = getpass(prompt="Enter a 4-digit PIN: ") 
-        pin_confirmation = getpass(prompt="Confirm your PIN: ")
+        while True: 
+            pin = getpass(prompt="Enter a 4-digit PIN: ") 
+            pin_confirmation = getpass(prompt="Confirm your PIN: ")
 
-        if self._validate_pin(pin, pin_confirmation):
-            pin = bytes(pin, 'ascii')
-            hashed_pin = bcrypt.hashpw(pin, bcrypt.gensalt())
-            self._store_pin(hashed_pin)
+            if self._validate_pin(pin, pin_confirmation):
+                pin = bytes(pin, 'ascii')
+                hashed_pin = bcrypt.hashpw(pin, bcrypt.gensalt())
+                self._store_pin(hashed_pin)
 
-            key = self._derive_key(pin)
+                key = self._derive_key(pin)
 
-            self._password_safe = PasswordSafe(key)
+                self._password_safe = PasswordSafe(key)
 
-            print(GREEN + CHECK_MARK + " Success! Password safe configured. Restart the program and enter your master PIN to begin." + DEFAULT_COLOR)
-            print("\n-----------------------------------------------------------\n")
-        else:
-            print("Please try again later.\n")
-            sys.exit(0)
+                print(GREEN + CHECK_MARK + " Success! Password safe configured. Restart the program and enter your master PIN to begin." + DEFAULT_COLOR)
+
+                break
+        
+        return
 
 
     def _is_new_user(self):
@@ -196,10 +208,9 @@ class PasswordManager:
 
         if self._is_new_user():
             self._create_user() 
-        
-        self._auth_user()
-
-        self._manage_actions()
+        else:
+            self._auth_user()
+            self._manage_actions()
             
 
 if __name__ == "__main__":
