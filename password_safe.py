@@ -1,35 +1,13 @@
 import os
+import sqlite3 
 from cryptography.fernet import Fernet 
 from getpass import getpass
-import sqlite3
-import pyperclip
 
 
-
-X = '\u2717'
-LOCK_EMOJI = '\U0001F510'
-CHECK_MARK = '\u2713'
-DEFAULT_TEXT = '\x1b[0m'
-ITALIC_TEXT = '\x1b[3m'
-BOLD_TEXT = '\033[1m'
-HEADER = '\033[95m'
-BLUE = '\033[94m'
-PURPLE = '\033[95m'
-CYAN = '\033[96m'
-YELLOW = '\033[93m'
-DEFAULT_COLOR = '\033[0m'
-RED = '\033[91m'
-GREEN = '\033[92m'
-
-branch = '├─'
-pipe = '│'
-end = '└─'
-dash = '─'
-                  
-child_conn_str = '│  '
-leaf_inner_str = '├─ '
-child_conn_str = '│  '
-empty_str = '   '
+ERROR_TEXT = '\033[91m\u2717 '
+SUCCESS_TEXT = '\033[92m\u2713 '
+HEADER_TEXT = '\033[94m\033[1m'
+DEFAULT_TEXT = '\033[0m\x1b[0m'
 
 class PasswordSafe:
     def __init__(self, key):
@@ -43,10 +21,10 @@ class PasswordSafe:
 
     def add(self, entry_name):
         if self._exists(entry_name):
-            print("Entry '" + entry_name + "' already exists.")
+            print(ERROR_TEXT + "Entry '" + entry_name + "' already exists." + DEFAULT_TEXT)
             return 
         
-        category = input("Group: ").upper()
+        category = input("Group (e.g. personal, work, etc.): ").upper()
         username = input("Username: ")
         password = getpass(prompt="Password: ")
 
@@ -57,12 +35,12 @@ class PasswordSafe:
         self._cursor.execute(query, params)
         self._connection.commit()
 
-        print(GREEN + CHECK_MARK + " Success! Entry stored." + DEFAULT_COLOR)
+        print(SUCCESS_TEXT + "Success! Entry stored." + DEFAULT_TEXT)
 
 
     def delete(self, entry_name):
         if not self._exists(entry_name):
-            print("Entry '" + entry_name + "' not found.")
+            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
             return 
 
         confirmation = input("Are you sure you want to delete '" + entry_name + "'? [Y/n] ").strip().lower()
@@ -72,11 +50,11 @@ class PasswordSafe:
             self._cursor.execute(query, params)
             self._connection.commit() 
 
-            print(GREEN + CHECK_MARK + " Success! Entry deleted." + DEFAULT_COLOR)
+            print(SUCCESS_TEXT + "Success! Entry deleted." + DEFAULT_TEXT)
 
     def edit(self, entry_name):
         if not self._exists(entry_name):
-            print("Entry '" + entry_name + "' not found.")
+            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
             return 
 
         params = (entry_name, )
@@ -110,12 +88,12 @@ class PasswordSafe:
         self._cursor.execute(query, params)
         self._connection.commit() 
 
-        print(GREEN + CHECK_MARK + " Success! Entry updated." + DEFAULT_COLOR)
+        print(SUCCESS_TEXT + "Success! Entry updated." + DEFAULT_TEXT)
 
 
     def peek(self, entry_name):
         if not self._exists(entry_name):
-            print("Entry '" + entry_name + "' not found.")
+            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
             return 
 
         params = (entry_name, )
@@ -131,7 +109,7 @@ class PasswordSafe:
 
     def copy(self, entry_name):
         if not self._exists(entry_name):
-            print("Entry '" + entry_name + "' not found.")
+            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
             return
 
         params = (entry_name, )
@@ -146,39 +124,25 @@ class PasswordSafe:
 
     def list_all(self):
         self._cursor.execute('SELECT category, title FROM entries')
-
         entries = self._cursor.fetchall()
 
-        print("Password Safe (" + str(len(entries)) + " entries)")
+        entries_count = len(entries)
 
-        if len(entries) == 0:
+        print("Password Safe (" + str(entries_count) + " entries)")
+
+        if entries_count == 0:
             return 
 
-        output = {}
-        for a, b in entries: 
-            output.setdefault(a, []).append(b) 
+        database = {}
+        for category, entry in entries: 
+            database.setdefault(category, []).append(entry) 
 
-        lastone = None
-        for k in output.keys():
-            if list(output.keys()).index(k) == len(output.keys()) - 1:
-                print(end + dash + dash + " " + BLUE + BOLD_TEXT + k + DEFAULT_TEXT+ DEFAULT_COLOR)
-                lastone = True
-            else:
-                print(branch + dash + dash + " " + BLUE + BOLD_TEXT + k + DEFAULT_TEXT+ DEFAULT_COLOR)
-            for v in output[k]:
-                #print(output[k].index(v))
-                if output[k].index(v) == len(output[k]) - 1 and lastone:
-                    print("     " + end + dash + dash + " " + v)
-                elif lastone:
-                    print("     " + branch + dash + dash + " " + v)
-                elif output[k].index(v) == len(output[k]) - 1:
-                    print(pipe + "    " + end + dash + dash + " " + v)
-                else: 
-                    print(pipe + "    " + branch + dash + dash + " " + v)
+        self._display_tree(database)
 
 
     def close(self):
         self._connection.close()
+
 
     def _encrypt(self, password):
         f = Fernet(self._key) 
@@ -191,9 +155,11 @@ class PasswordSafe:
 
     def _decrypt(self, token):
         f = Fernet(self._key)
-        password = f.decrypt(token)
 
-        return password.decode("utf-8")
+        password = f.decrypt(token)
+        password = password.decode("utf-8")
+
+        return password
 
 
     def _exists(self, entry_name):
@@ -206,3 +172,33 @@ class PasswordSafe:
             return True 
 
         return False
+
+
+    def _display_tree(self, database):
+        branch = '├─'
+        pipe = '│'
+        end = '└─'
+        dash = '── '
+        indent = ' ' * 5
+        tab = ' ' * 4
+
+        last_category = list(database.keys())[len(database.keys()) - 1]
+        is_last_category = False
+
+        for category in database.keys():
+            if category == last_category:
+                print(end + dash + HEADER_TEXT + category + DEFAULT_TEXT)
+                is_last_category = True
+            else:
+                print(branch +  dash + HEADER_TEXT + category + DEFAULT_TEXT)
+
+            last_entry = (database[category])[len(database[category]) - 1]
+            for entry in database[category]:
+                if entry == last_entry and is_last_category:
+                    print(indent + end + dash + entry)
+                elif entry == last_entry and not is_last_category:
+                    print(pipe + tab + end + dash + entry)
+                elif is_last_category:
+                    print(indent + branch + dash + entry)
+                else: 
+                    print(pipe + tab + branch + dash + entry)
