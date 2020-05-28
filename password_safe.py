@@ -2,8 +2,10 @@ import os
 import sqlite3 
 from cryptography.fernet import Fernet 
 from getpass import getpass
+import pyperclip
 
 
+# Unicode text wrappers
 ERROR_TEXT = '\033[91m\u2717 '
 SUCCESS_TEXT = '\033[92m\u2713 '
 HEADER_TEXT = '\033[94m\033[1m'
@@ -26,7 +28,7 @@ class PasswordSafe:
         
         category = input("Group (e.g. personal, work, etc.): ").upper()
         username = input("Username: ")
-        password = getpass(prompt="Password: ")
+        password = getpass(prompt = "Password: ")
 
         encrypted_password = self._encrypt(password)
 
@@ -70,7 +72,7 @@ class PasswordSafe:
         title = input("Title [" + curr_title + "]: ")
         category = input("Group [" + curr_category + "]: ").upper()
         username = input("Username [" + curr_username + "]: ")
-        password = getpass(prompt="Password [" + curr_password + "]: ")
+        password = getpass(prompt = "Password [" + curr_password + "]: ")
 
         if title.strip() == '':
             title = curr_title
@@ -157,7 +159,7 @@ class PasswordSafe:
         f = Fernet(self._key)
 
         password = f.decrypt(token)
-        password = password.decode("utf-8")
+        password = password.decode('utf-8')
 
         return password
 
