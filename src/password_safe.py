@@ -4,12 +4,7 @@ from cryptography.fernet import Fernet
 from getpass import getpass
 import pyperclip
 
-
-# Unicode text wrappers
-ERROR_TEXT = '\033[91m\u2717 '
-SUCCESS_TEXT = '\033[92m\u2713 '
-HEADER_TEXT = '\033[94m\033[1m'
-DEFAULT_TEXT = '\033[0m\x1b[0m'
+from .text_wrappers import TextWrappers
 
 class PasswordSafe:
     def __init__(self, key):
@@ -20,10 +15,12 @@ class PasswordSafe:
         
         self._key = key
 
+        self._text = TextWrappers()
+
 
     def add(self, entry_name):
         if self._exists(entry_name):
-            print(ERROR_TEXT + "Entry '" + entry_name + "' already exists." + DEFAULT_TEXT)
+            print(self._text.ERROR + "Entry '" + entry_name + "' already exists." + self._text.DEFAULT)
             return 
         
         category = input("Group (e.g. personal, work, etc.): ").upper()
@@ -37,12 +34,12 @@ class PasswordSafe:
         self._cursor.execute(query, params)
         self._connection.commit()
 
-        print(SUCCESS_TEXT + "Success! Entry stored." + DEFAULT_TEXT)
+        print(self._text.SUCCESS + "Success! Entry stored." + self._text.DEFAULT)
 
 
     def delete(self, entry_name):
         if not self._exists(entry_name):
-            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
+            print(self._text.ERROR + "Entry '" + entry_name + "' not found." + self._text.DEFAULT)
             return 
 
         confirmation = input("Are you sure you want to delete '" + entry_name + "'? [Y/n] ").strip().lower()
@@ -52,11 +49,11 @@ class PasswordSafe:
             self._cursor.execute(query, params)
             self._connection.commit() 
 
-            print(SUCCESS_TEXT + "Success! Entry deleted." + DEFAULT_TEXT)
+            print(self._text.SUCCESS + "Success! Entry deleted." + self._text.DEFAULT)
 
     def edit(self, entry_name):
         if not self._exists(entry_name):
-            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
+            print(self._text.ERROR + "Entry '" + entry_name + "' not found." + self._text.DEFAULT)
             return 
 
         params = (entry_name, )
@@ -90,12 +87,12 @@ class PasswordSafe:
         self._cursor.execute(query, params)
         self._connection.commit() 
 
-        print(SUCCESS_TEXT + "Success! Entry updated." + DEFAULT_TEXT)
+        print(self._text.SUCCESS + "Success! Entry updated." + self._text.DEFAULT)
 
 
     def peek(self, entry_name):
         if not self._exists(entry_name):
-            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
+            print(self._text.ERROR + "Entry '" + entry_name + "' not found." + self._text.DEFAULT)
             return 
 
         params = (entry_name, )
@@ -111,7 +108,7 @@ class PasswordSafe:
 
     def copy(self, entry_name):
         if not self._exists(entry_name):
-            print(ERROR_TEXT + "Entry '" + entry_name + "' not found." + DEFAULT_TEXT)
+            print(self._text.ERROR + "Entry '" + entry_name + "' not found." + self._text.DEFAULT)
             return
 
         params = (entry_name, )
@@ -189,10 +186,10 @@ class PasswordSafe:
 
         for category in database.keys():
             if category == last_category:
-                print(end + dash + HEADER_TEXT + category + DEFAULT_TEXT)
+                print(end + dash + self._text.HEADER + category + self._text.DEFAULT)
                 is_last_category = True
             else:
-                print(branch +  dash + HEADER_TEXT + category + DEFAULT_TEXT)
+                print(branch +  dash + self._text.HEADER + category + self._text.DEFAULT)
 
             last_entry = (database[category])[len(database[category]) - 1]
             for entry in database[category]:

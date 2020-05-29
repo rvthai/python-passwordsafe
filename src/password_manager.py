@@ -8,31 +8,28 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from password_safe import PasswordSafe
 
-# Unicode text wrappers
-LOCK_EMOJI = '\U0001F510'
-ERROR_TEXT = '\033[91m\u2717 '
-SUCCESS_TEXT = '\033[92m\u2713 '
-INFO_TEXT = '\033[96m'
-HEADER_TEXT = '\033[1m'
-PARAM_TEXT = '\x1b[3m'
-DEFAULT_TEXT = '\033[0m\x1b[0m'
+#from .password_safe import PasswordSafe
+
+from .password_safe import PasswordSafe
+from .text_wrappers import TextWrappers
 
 
 class PasswordManager:
     def __init__(self):
         self._password_safe = None
-
+        self._text = TextWrappers()
 
     def _destroy_safe(self):
         confirmation = input("Are you sure you want to destroy this safe? All data including the master PIN will be deleted. [Y/n] ").strip().lower()
+
+        self._password_safe.close()
 
         if confirmation == 'y' or confirmation == 'yes':
             os.remove('master.key')
             os.remove('password_safe.db')
 
-            print(SUCCESS_TEXT + "Success! Password safe destroyed. Restart the program to set up a new safe." + DEFAULT_TEXT)
+            print(self._text.SUCCESS + "Success! Password safe destroyed. Restart the program to set up a new safe." + self._text.DEFAULT)
 
             return True
         
@@ -40,11 +37,11 @@ class PasswordManager:
 
 
     def _display_options(self):
-        print("add <" + PARAM_TEXT + "entry" + DEFAULT_TEXT + ">     - Create and store an entry into the safe.")
-        print("delete <" + PARAM_TEXT + "entry" + DEFAULT_TEXT + ">  - Remove an entry from the safe.")
-        print("edit <" +  PARAM_TEXT + "entry" + DEFAULT_TEXT + ">    - Change and update an entry's information.")
-        print("peek <" + PARAM_TEXT + "entry" + DEFAULT_TEXT + ">    - Display the username and password of an entry.")
-        print("copy <" + PARAM_TEXT + "entry" + DEFAULT_TEXT + ">    - Copy the password of an entry without peeking.")
+        print("add <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">     - Create and store an entry into the safe.")
+        print("delete <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">  - Remove an entry from the safe.")
+        print("edit <" +  self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Change and update an entry's information.")
+        print("peek <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Display the username and password of an entry.")
+        print("copy <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Copy the password of an entry without peeking.")
         print("list            - Display all the entries stored in the safe.")
         print("help            - Display available options and their usage details.")
         print("destroy         - Delete all data including the master PIN.")
@@ -52,7 +49,7 @@ class PasswordManager:
 
 
     def _manage_actions(self):
-        print(INFO_TEXT + "\nUse the command 'help' for usage details\nUse the command 'exit' to exit at any time.\n" + DEFAULT_TEXT)
+        print(self._text.INFO + "\nUse the command 'help' for usage details\nUse the command 'exit' to exit at any time.\n" + self._text.DEFAULT)
 
         cmd = ''
         
@@ -71,9 +68,9 @@ class PasswordManager:
                     self._password_safe.close()
                     return
                 elif cmd[0].lower() in ('add', 'delete', 'edit', 'peek', 'copy'):
-                    print(ERROR_TEXT + "Command '" + cmd[0].lower() + "' requires an additional parameter. Type 'help' for usage details." + DEFAULT_TEXT)
+                    print(self._text.ERROR + "Command '" + cmd[0].lower() + "' requires an additional parameter. Type 'help' for usage details." + self._text.DEFAULT)
                 else:
-                    print(ERROR_TEXT + "Command '" + cmd[0] + "' not found." + DEFAULT_TEXT)
+                    print(self._text.ERROR + "Command '" + cmd[0] + "' not found." + self._text.DEFAULT)
 
             if len(cmd) == 2:
                 if cmd[0].lower() == 'add':
@@ -87,7 +84,7 @@ class PasswordManager:
                 elif cmd[0].lower() == 'copy':
                     self._password_safe.copy(cmd[1])
                 else:
-                    print(ERROR_TEXT + "Command '" + cmd[0] + "' not found." + DEFAULT_TEXT)
+                    print(self._text.ERROR + "Command '" + cmd[0] + "' not found." + self._text.DEFAULT)
 
 
     def _derive_key(self, pin):
@@ -111,7 +108,7 @@ class PasswordManager:
             f = open('master.key', 'br')
             hashed_pin = f.read()
         except FileNotFoundError:
-            print(ERROR_TEXT + "User data is corrupted or lost. Unable to authroize user." + DEFAULT_TEXT) 
+            print(self._text.ERROR + "User data is corrupted or lost. Unable to authroize user." + self._text.DEFAULT) 
 
         while True:
             pin = getpass(prompt = "Enter your master PIN: ")
@@ -121,40 +118,40 @@ class PasswordManager:
                 key = self._derive_key(pin)
                 self._password_safe = PasswordSafe(key)
 
-                print(SUCCESS_TEXT + "Success! Password safe unlocked." + DEFAULT_TEXT)
+                print(self._text.SUCCESS + "Success! Password safe unlocked." + self._text.DEFAULT)
                 return
             else:
-                print(ERROR_TEXT + "Incorrect PIN. Please try again." + DEFAULT_TEXT)
+                print(self._text.ERROR + "Incorrect PIN. Please try again." + self._text.DEFAULT)
 
 
     def _validate_pin(self, pin, pin_confirmation):
         # validate that input is not blank
         if pin == '':
-            print(ERROR_TEXT + "No PIN was entered. Please try again." + DEFAULT_TEXT)
+            print(self._text.ERROR + "No PIN was entered. Please try again." + self._text.DEFAULT)
             return False 
 
         # validate that pin is a combination of digits 0-9
         try:
             int(pin)
         except ValueError:
-            print(ERROR_TEXT + "PIN was not a combination of digits 0-9. Please try again." + DEFAULT_TEXT)
+            print(self._text.ERROR + "PIN was not a combination of digits 0-9. Please try again." + self._text.DEFAULT)
             return False 
 
         # validate that pin is 4-digits long
         if len(pin) != 4:
-            print(ERROR_TEXT + "PIN must be 4-digits long. Please try again." + DEFAULT_TEXT)
+            print(self._text.ERROR + "PIN must be 4-digits long. Please try again." + self._text.DEFAULT)
             return False 
 
         # validate that pin was confirmed
         if pin != pin_confirmation:
-            print(ERROR_TEXT + "The PIN numbers entered did not match. Please try again." + DEFAULT_TEXT)
+            print(self._text.ERROR + "The PIN numbers entered did not match. Please try again." + self._text.DEFAULT)
             return False
 
         return True
         
             
     def _create_user(self):
-        print(INFO_TEXT + "Welcome! To get started, create a master PIN. Do not lose it as it is unrecoverable." + DEFAULT_TEXT)
+        print(self._text.INFO + "Welcome! To get started, create a master PIN. Do not lose it as it is unrecoverable." + self._text.DEFAULT)
 
         while True: 
             pin = getpass(prompt = "Enter a 4-digit PIN: ") 
@@ -171,7 +168,7 @@ class PasswordManager:
                 key = self._derive_key(pin)
                 self._password_safe = PasswordSafe(key)
 
-                print(SUCCESS_TEXT + "Success! Password safe configured. Restart the program and enter your master PIN to begin." + DEFAULT_TEXT)
+                print(self._text.SUCCESS + "Success! Password safe configured. Restart the program and enter your master PIN to begin." + self._text.DEFAULT)
                 
                 return
 
@@ -184,7 +181,7 @@ class PasswordManager:
 
     def _display_banner(self):
         print("\n===========================================================")
-        print("\t" + HEADER_TEXT + LOCK_EMOJI + " PYTHON PASSWORD SAFE - Command Line Tool" + DEFAULT_TEXT)
+        print("\t" + self._text.BANNER + self._text.LOCK + "PYTHON PASSWORD SAFE - Command Line Tool" + self._text.DEFAULT)
         print("===========================================================\n")
     
 
@@ -196,11 +193,13 @@ class PasswordManager:
         else:
             self._auth_user()
             self._manage_actions()
-            
 
-if __name__ == "__main__":
+def main():
     try: 
         PasswordManager().run()
     except KeyboardInterrupt:
         print("\n")
         sys.exit(0)
+
+if __name__ == "__main__":
+    main()
