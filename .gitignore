@@ -2,3 +2,6 @@ __pycache__/
 env/
 master.key
 password_safe.db
+build/
+dist/
+*.egg-info
