@@ -6,8 +6,8 @@
 
 > **Note:** This project was independently made for the purposes of learning new
 > cryptography tools, practicing database interactions with SQLite, and developing a
-> personal password manager for my local machine. Therefore, high-security is not
-> gauranteed. Use at your own risk!
+> personal password manager for my local machine. Therefore, strong security is not
+> guaranteed. Please use at your own risk!
 
 ## Getting Started
 
