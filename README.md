@@ -14,7 +14,13 @@
 
 ## Demo
 
-![Farmers Market Finder Demo](demo/demo.gif)
+### Initial Setup
+
+![Demo - Running the program for the first time.](static/demo-1.gif)
+
+### Basic Usage
+
+![Demo - Running the program for the first time.](static/demo-2.gif)
 
 > **NOTE**
 >
