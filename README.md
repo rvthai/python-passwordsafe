@@ -4,24 +4,22 @@
 
 **Python Password Safe** allows you to save an encrypted list of username-password entries organized into different groups of your making. All you have to do is create and remember one master PIN number in order to unlock your password safe.
 
----
-
-**NOTE**
-
-High-level secureity is not gauranteed. Please use this program at your own risk!
-
-This project was independently made for the purposes of learning new cryptography tools, practicing database interactions with SQLite, and developing a personal password manager for my local machine.
-
----
+> **NOTE**
+>
+> High-level secureity is not gauranteed. Please use this program at your own risk!
+>
+> This project was independently made for the purposes of learning new cryptography
+> tools, practicing database interactions with SQLite, and developing a personal
+> password manager for my local machine.
 
 ## Demo
 
----
+![Farmers Market Finder Demo](demo/demo.gif)
 
-**NOTE**
-Colors, emojis, and other formatted text will not display correctly on Windows machines. _Windows Command-Line_ does not (currently) support unicode characters.
-
----
+> **NOTE**
+>
+> Colors, emojis, and other formatted text will not display correctly on Windows
+> machines. _Windows Command-Line_ does not (currently) support unicode characters.
 
 ## Getting Started
 
