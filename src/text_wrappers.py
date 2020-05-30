@@ -2,7 +2,7 @@ import sys
 
 class TextWrappers:
     def __init__(self):
-        if (sys.platform == "win32"):
+        if (sys.platform == 'win32'):
             self.LOCK = ''
             self.ERROR = ''
             self.SUCCESS = ''
@@ -12,7 +12,7 @@ class TextWrappers:
             self.DEFAULT = ''
             self.HEADER = ''
             self.DEFAULT = ''
-        else:
+        else: # MacOS, Linux, etc.
             self.LOCK = '\U0001F510 '
             self.ERROR = '\033[91m\u2717 '
             self.SUCCESS = '\033[92m\u2713 '

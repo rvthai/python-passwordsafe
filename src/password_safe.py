@@ -1,5 +1,6 @@
 import os
 import sqlite3 
+
 from cryptography.fernet import Fernet 
 from getpass import getpass
 import pyperclip

@@ -8,9 +8,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-
-#from .password_safe import PasswordSafe
-
 from .password_safe import PasswordSafe
 from .text_wrappers import TextWrappers
 
@@ -37,15 +34,15 @@ class PasswordManager:
 
 
     def _display_options(self):
-        print("add <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">     - Create and store an entry into the safe.")
-        print("delete <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">  - Remove an entry from the safe.")
-        print("edit <" +  self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Change and update an entry's information.")
-        print("peek <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Display the username and password of an entry.")
-        print("copy <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">    - Copy the password of an entry without peeking.")
-        print("list            - Display all the entries stored in the safe.")
-        print("help            - Display available options and their usage details.")
-        print("destroy         - Delete all data including the master PIN.")
-        print("exit            - Lock the safe and exit the program.")
+        print("add <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">        - Create and store an entry into the safe.")
+        print("delete <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">     - Remove an entry from the safe.")
+        print("edit <" +  self._text.PARAM + "entry" + self._text.DEFAULT + ">       - Change and update an entry's information.")
+        print("peek <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">       - Display the username and password of an entry.")
+        print("copy <" + self._text.PARAM + "entry" + self._text.DEFAULT + ">       - Copy the password of an entry without peeking.")
+        print("list               - Display all the entries stored in the safe.")
+        print("help               - Display available options and their usage details.")
+        print("destroy            - Delete all data including the master PIN.")
+        print("exit               - Lock the safe and exit the program.")
 
 
     def _manage_actions(self):
