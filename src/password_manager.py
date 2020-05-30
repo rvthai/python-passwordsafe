@@ -12,6 +12,9 @@ from .password_safe import PasswordSafe
 from .text_wrappers import TextWrappers
 
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
 class PasswordManager:
     def __init__(self):
         self._password_safe = None
@@ -23,8 +26,8 @@ class PasswordManager:
         self._password_safe.close()
 
         if confirmation == 'y' or confirmation == 'yes':
-            os.remove('master.key')
-            os.remove('password_safe.db')
+            os.remove(ROOT_DIR + '/master.key')
+            os.remove(ROOT_DIR + '/password_safe.db')
 
             print(self._text.SUCCESS + "Success! Password safe destroyed. Restart the program to set up a new safe." + self._text.DEFAULT)
 
@@ -102,7 +105,7 @@ class PasswordManager:
 
     def _auth_user(self):
         try:
-            f = open('master.key', 'br')
+            f = open(ROOT_DIR + '/master.key', 'br')
             hashed_pin = f.read()
         except FileNotFoundError:
             print(self._text.ERROR + "User data is corrupted or lost. Unable to authroize user." + self._text.DEFAULT) 
@@ -158,7 +161,7 @@ class PasswordManager:
                 pin = bytes(pin, 'ascii')
                 hashed_pin = bcrypt.hashpw(pin, bcrypt.gensalt())
 
-                f = open('master.key', 'wb')
+                f = open(ROOT_DIR + '/master.key', 'wb')
                 f.write(hashed_pin)
                 f.close()
 
@@ -171,7 +174,7 @@ class PasswordManager:
 
 
     def _is_new_user(self):
-        if os.path.exists('master.key') and os.path.exists('password_safe.db'):
+        if os.path.exists(ROOT_DIR + '/master.key') and os.path.exists(ROOT_DIR + '/password_safe.db'):
             return False
         return True
 

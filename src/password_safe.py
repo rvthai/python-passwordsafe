@@ -7,9 +7,13 @@ import pyperclip
 
 from .text_wrappers import TextWrappers
 
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
 class PasswordSafe:
     def __init__(self, key):
-        self._connection = sqlite3.connect('password_safe.db')
+        self._connection = sqlite3.connect(ROOT_DIR + '/password_safe.db')
         self._cursor = self._connection.cursor()
 
         self._cursor.execute('CREATE TABLE IF NOT EXISTS entries (title text NOT NULL PRIMARY KEY, category text NOT NULL, username text NOT NULL, password blob NOT NULL)')
