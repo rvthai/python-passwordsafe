@@ -4,28 +4,10 @@
 
 **Python Password Safe** allows you to save an encrypted list of username-password entries organized into different groups of your making. All you have to do is create and remember one master PIN number in order to unlock your password safe.
 
-> **NOTE**
->
-> High-level secureity is not gauranteed. Please use this program at your own risk!
->
-> This project was independently made for the purposes of learning new cryptography
-> tools, practicing database interactions with SQLite, and developing a personal
-> password manager for my local machine.
-
-## Demo
-
-### Initial Setup
-
-![Demo - Running the program for the first time.](static/demo-1.gif)
-
-### Basic Usage
-
-![Demo - Running the program for the first time.](static/demo-2.gif)
-
-> **NOTE**
->
-> Colors, emojis, and other formatted text will not display correctly on Windows
-> machines. _Windows Command-Line_ does not (currently) support unicode characters.
+> **Note:** This project was independently made for the purposes of learning new
+> cryptography tools, practicing database interactions with SQLite, and developing a
+> personal password manager for my local machine. Therefore, high-security is not
+> gauranteed. Use at your own risk!
 
 ## Getting Started
 
@@ -41,6 +23,20 @@ pip3 install py-pwsafe
 ```
 pypwsafe
 ```
+
+## Demo
+
+### Initial Setup
+
+![Demo - Running the program for the first time.](static/demo-1.gif)
+
+### Basic Usage
+
+![Demo - Running the program for the first time.](static/demo-2.gif)
+
+> **Note:** Colors, emojis, and other formatted text will not display correctly on
+> Windows machines. _Windows Command Line_ does not (currently) support unicode
+> characters.
 
 ## License
 
