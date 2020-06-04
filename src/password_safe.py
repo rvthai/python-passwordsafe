@@ -32,6 +32,10 @@ class PasswordSafe:
         username = input("Username: ")
         password = getpass(prompt = "Password: ")
 
+        if category == '' or username == '' or password == '':
+            print(self._text.ERROR + "Incomplete entry. Please try again." + self._text.DEFAULT)
+            return
+
         encrypted_password = self._encrypt(password)
 
         params = (entry_name, category, username, encrypted_password)
