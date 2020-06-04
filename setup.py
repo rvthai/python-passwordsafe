@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup (
     name = 'py-pwsafe',
-    version = '2.0.2',
+    version = '2.0.3',
     description = 'Python Password Safe',
     long_description = long_description,
     long_description_content_type = 'text/markdown',
